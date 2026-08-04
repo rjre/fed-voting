@@ -5,40 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FOMC Dissents vs. the Target Rate Path, 2016&ndash;2026</title>
 <meta name="description" content="Every FOMC dissenting vote, Jan 2016–Jul 2026, plotted against the fed funds target path. Tests whether the number of members voting against the chair predicts the committee's next rate decision.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23EDEFEE'/%3E%3Crect x='2' y='7' width='2' height='7' fill='%23A8AFAC' stroke='%2314181C' stroke-width='0.5'/%3E%3Crect x='7' y='3' width='2' height='11' fill='%237A2B2B' stroke='%2314181C' stroke-width='0.5'/%3E%3Crect x='12' y='5' width='2' height='9' fill='%232E5C7A' stroke='%2314181C' stroke-width='0.5'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23ffffff'/%3E%3Crect x='2' y='7' width='2' height='7' fill='%23b3b3b3' stroke='%23086132' stroke-width='0.5'/%3E%3Crect x='7' y='3' width='2' height='11' fill='%23086132' stroke='%23086132' stroke-width='0.5'/%3E%3Crect x='12' y='5' width='2' height='9' fill='%234e9a33' stroke='%23086132' stroke-width='0.5'/%3E%3C/svg%3E">
 <style>
+  /*
+    Formatting standards taken from ruffer.co.uk's own stylesheet and chart
+    component (assets/css/rf-graph.css): Georgia for headings/body copy in
+    #383838, Ruffer green (#086132 heading / #4e9a33 link-accent) as the house
+    colour, #f8f8f8 panels, #797979/#E9E9E9 for axis ink — no webfonts to
+    fetch, Georgia and system sans are already on every OS.
+  */
   :root{
-    --bg:#EDEFEE;
-    --ink:#14181C;
+    --bg:#ffffff;
+    --panel:#f8f8f8;
+    --ink:#383838;
+    --heading:#086132;
+    --accent:#4e9a33;
+    --muted:#797979;
+    --hair:#e5e5e5;
     --tighter:#7A2B2B;
     --easier:#2E5C7A;
-    --other:#7A6A32;
-    --assent:#A8AFAC;
-    --hair:#C9CFCB;
+    --other:#8a6d1f;
+    --assent:#b3b3b3;
   }
   *{ box-sizing:border-box; }
   html,body{
     margin:0; padding:0;
     background:var(--bg);
     color:var(--ink);
-    font-family:'Spectral', Georgia, serif;
+    font-family:Georgia, 'Times New Roman', serif;
   }
-  ::selection{ background:var(--ink); color:var(--bg); }
-  h1,h2,h3,.label,.mono-label{
-    font-family:'Archivo Narrow', sans-serif;
+  ::selection{ background:var(--heading); color:#fff; }
+  h1,h2,h3{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-weight:normal;
+    color:var(--heading);
+    margin:0;
+  }
+  .label,.mono-label{
+    font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-weight:700;
     letter-spacing:.02em;
     text-transform:uppercase;
     margin:0;
   }
   .figure, .mono, table, .tooltip-value, kbd{
-    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-family:ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   }
-  a{ color:var(--ink); }
-  a:hover{ color:var(--tighter); }
+  a{ color:var(--accent); }
+  a:hover{ color:var(--heading); }
+
+  .sans{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 
   .sheet{
     max-width:1180px;
@@ -47,7 +63,7 @@
   }
 
   header.masthead{
-    border-bottom:2px solid var(--ink);
+    border-bottom:2px solid var(--heading);
     padding-bottom:14px;
     margin-bottom:22px;
     display:flex;
@@ -57,26 +73,27 @@
     flex-wrap:wrap;
   }
   header.masthead h1{
-    font-size:26px;
-    line-height:1.15;
+    font-size:28px;
+    line-height:1.2;
   }
   header.masthead .sub{
-    font-family:'Spectral', serif;
     font-style:italic;
     font-size:14px;
-    color:#3a4249;
+    color:var(--ink);
     max-width:640px;
     margin-top:6px;
   }
   header.masthead .meta{
+    font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size:11px;
     text-align:right;
     line-height:1.6;
-    color:#3a4249;
+    color:var(--muted);
   }
   header.masthead .meta .mono{ font-size:11px; }
 
   section{ margin-bottom:36px; }
+  section > h2{ font-size:20px; margin-bottom:12px; }
 
   .legend{
     display:flex;
@@ -89,107 +106,114 @@
     margin-bottom:14px;
   }
   .legend .item{ display:flex; align-items:center; gap:7px; }
-  .legend .swatch{ width:13px; height:13px; border:1px solid var(--ink); flex:none; }
-  .legend .swatch.line{ width:18px; height:0; border:none; border-top:2px solid var(--ink); }
-  .legend .item span.txt{ font-family:'Archivo Narrow', sans-serif; font-weight:700; font-size:11px; letter-spacing:.02em; text-transform:uppercase; }
+  .legend .swatch{ width:13px; height:13px; border:1px solid var(--muted); flex:none; }
+  .legend .swatch.line{ width:18px; height:0; border:none; border-top:2px solid var(--heading); }
+  .legend .item span.txt{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight:700; font-size:11px; letter-spacing:.02em; text-transform:uppercase; color:var(--ink); }
 
   .chart-card{
-    border:1px solid var(--ink);
-    background:var(--bg);
+    border:1px solid var(--hair);
+    background:var(--panel);
     padding:18px 18px 8px;
   }
-  .chart-card .chart-title{ font-size:13px; margin-bottom:2px; }
-  .chart-card .chart-note{ font-size:11px; color:#3a4249; font-style:italic; margin-bottom:10px; }
+  .chart-card .chart-title{ font-family:Georgia, serif; font-size:15px; margin-bottom:2px; color:var(--heading); }
+  .chart-card .chart-note{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:11px; color:var(--muted); font-style:normal; margin-bottom:10px; }
 
   svg#chart{ width:100%; height:auto; display:block; }
   .hitcol{ fill:transparent; cursor:crosshair; }
   .hitcol:focus{ outline:none; }
   .hitcol:focus + .focus-ring{ visibility:visible; }
 
-  .axislabel{ font-family:'IBM Plex Mono'; font-size:10px; fill:var(--ink); }
-  .axistick{ stroke:var(--hair); stroke-width:1; }
-  .stepline{ fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:miter; stroke-linecap:butt; }
-  .crosshair{ stroke:var(--ink); stroke-width:1; visibility:hidden; }
-  .hoverdot{ fill:var(--ink); visibility:hidden; }
-  .colring{ fill:none; stroke:var(--ink); stroke-width:1.5; visibility:hidden; }
+  .axislabel{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:10px; fill:var(--muted); }
+  .axistick{ stroke:#e9e9e9; stroke-width:1; }
+  .stepline{ fill:none; stroke:var(--heading); stroke-width:2; stroke-linejoin:miter; stroke-linecap:butt; }
+  .crosshair{ stroke:var(--muted); stroke-width:1; visibility:hidden; }
+  .hoverdot{ fill:var(--heading); visibility:hidden; }
+  .colring{ fill:none; stroke:var(--heading); stroke-width:1.5; visibility:hidden; }
   .movetick{ fill:var(--ink); }
-  .erabound{ stroke:var(--ink); stroke-width:1; opacity:.55; }
-  .eralabel{ font-family:'Archivo Narrow'; font-weight:700; font-size:10px; letter-spacing:.04em; text-transform:uppercase; fill:var(--ink); opacity:.7; }
+  .erabound{ stroke:var(--muted); stroke-width:1; opacity:.4; }
+  .eralabel{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight:700; font-size:10px; letter-spacing:.04em; text-transform:uppercase; fill:var(--muted); opacity:.85; }
 
-  .cell-assent{ fill:var(--assent); stroke:var(--ink); stroke-width:.6; }
-  .cell-tighter{ fill:var(--tighter); stroke:var(--ink); stroke-width:.6; }
-  .cell-easier{ fill:var(--easier); stroke:var(--ink); stroke-width:.6; }
-  .cell-other{ fill:var(--other); stroke:var(--ink); stroke-width:.6; }
+  .cell-assent{ fill:var(--assent); stroke:#999; stroke-width:.6; }
+  .cell-tighter{ fill:var(--tighter); stroke:#5a1f1f; stroke-width:.6; }
+  .cell-easier{ fill:var(--easier); stroke:#20415a; stroke-width:.6; }
+  .cell-other{ fill:var(--other); stroke:#5f4c15; stroke-width:.6; }
 
   .readout{
-    border:1px solid var(--ink);
+    border:1px solid var(--hair);
     border-top:none;
+    background:var(--panel);
     padding:16px 18px;
     min-height:112px;
     display:flex;
     gap:22px;
     flex-wrap:wrap;
   }
-  .readout .rd-date{ font-size:15px; white-space:nowrap; }
+  .readout .rd-date{ font-size:16px; color:var(--heading); white-space:nowrap; }
   .readout .rd-body{ flex:1; min-width:260px; font-size:13px; line-height:1.55; }
-  .readout .rd-vote{ font-size:12px; margin-bottom:6px; }
-  .readout .rd-vote b{ font-family:'IBM Plex Mono'; font-weight:600; }
+  .readout .rd-vote{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; margin-bottom:6px; }
+  .readout .rd-vote b{ font-family:ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-weight:600; color:var(--heading); }
   .readout ul{ margin:4px 0 0; padding-left:18px; }
   .readout li{ margin-bottom:5px; }
   .readout .tag{
     display:inline-block;
-    font-family:'Archivo Narrow'; font-weight:700; font-size:10px;
+    font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight:700; font-size:10px;
     text-transform:uppercase; letter-spacing:.03em;
-    padding:1px 5px; border:1px solid var(--ink); margin-right:5px;
+    padding:1px 5px; border:1px solid currentColor; margin-right:5px;
   }
   .readout .src{ font-size:11px; margin-top:8px; display:block; }
-  .readout .placeholder{ font-style:italic; color:#3a4249; font-size:13px; }
+  .readout .placeholder{ font-style:italic; color:var(--muted); font-size:13px; }
 
   .stats-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
     gap:1px;
-    background:var(--ink);
-    border:1px solid var(--ink);
+    background:var(--hair);
+    border:1px solid var(--hair);
   }
-  .stat-box{ background:var(--bg); padding:16px 18px; }
-  .stat-box .k{ font-size:11px; color:#3a4249; margin-bottom:8px; }
-  .stat-box .v{ font-size:26px; font-weight:600; }
-  .stat-box .v .n{ font-size:12px; color:#3a4249; font-weight:400; margin-left:6px; }
-  .stat-box .foot{ font-size:11px; margin-top:8px; color:#3a4249; }
+  .stat-box{ background:#fff; padding:16px 18px; }
+  .stat-box .k{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:11px; color:var(--muted); margin-bottom:8px; }
+  .stat-box .v{ font-family:Georgia, serif; font-size:28px; font-weight:normal; color:var(--heading); }
+  .stat-box .v .n{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; color:var(--muted); font-weight:400; margin-left:6px; }
+  .stat-box .foot{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:11px; margin-top:8px; color:var(--muted); }
 
   table.cases{ width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
   table.cases th, table.cases td{ border:1px solid var(--hair); padding:6px 8px; text-align:left; }
-  table.cases th{ font-family:'Archivo Narrow'; font-weight:700; text-transform:uppercase; font-size:10px; letter-spacing:.03em; background:rgba(20,24,28,.04); }
+  table.cases th{ font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight:700; text-transform:uppercase; font-size:10px; letter-spacing:.03em; background:var(--panel); color:var(--muted); }
   table.cases td.tighter, table.cases td .dot-tighter{ color:var(--tighter); }
 
-  details.datatable{ border:1px solid var(--ink); }
+  details.datatable{ border:1px solid var(--hair); background:var(--panel); }
   details.datatable > summary{
-    cursor:pointer; padding:12px 16px; font-family:'Archivo Narrow'; font-weight:700;
-    font-size:12px; text-transform:uppercase; letter-spacing:.03em;
+    cursor:pointer; padding:12px 16px; font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight:700;
+    font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--heading);
     list-style:none;
   }
   details.datatable > summary::-webkit-details-marker{ display:none; }
   details.datatable > summary:before{ content:"▸ "; }
   details.datatable[open] > summary:before{ content:"▾ "; }
-  details.datatable .tbl-wrap{ overflow-x:auto; border-top:1px solid var(--ink); }
+  details.datatable .tbl-wrap{ overflow-x:auto; border-top:1px solid var(--hair); background:#fff; }
   table.full{ width:100%; border-collapse:collapse; font-size:11.5px; white-space:nowrap; }
   table.full th, table.full td{ border-bottom:1px solid var(--hair); padding:5px 9px; text-align:left; }
-  table.full th{ position:sticky; top:0; background:var(--bg); font-family:'Archivo Narrow'; font-weight:700; text-transform:uppercase; font-size:10px; }
+  table.full th{ position:sticky; top:0; background:#fff; font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight:700; text-transform:uppercase; font-size:10px; color:var(--muted); }
   table.full td.num{ text-align:right; }
-  table.full tr.dissent-row td{ background:rgba(20,24,28,.03); }
-  table.full .clsdot{ display:inline-block; width:8px; height:8px; margin-right:4px; border:1px solid var(--ink); vertical-align:middle; }
+  table.full tr.dissent-row td{ background:var(--panel); }
+  table.full .clsdot{ display:inline-block; width:8px; height:8px; margin-right:4px; border:1px solid #999; vertical-align:middle; }
 
   footer{
     margin-top:44px;
     padding-top:16px;
-    border-top:2px solid var(--ink);
+    border-top:2px solid var(--heading);
+    font-family:'Avenir Next', Avenir, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size:11.5px;
-    color:#3a4249;
+    color:var(--muted);
     line-height:1.6;
   }
   footer a{ text-decoration:underline; }
   footer .colophon{ margin-top:10px; font-style:italic; }
+
+  @media (prefers-reduced-motion: no-preference){
+    .stepline{ animation:rf-draw 1.1s ease-out forwards; }
+  }
+  @keyframes rf-draw{ to{ stroke-dashoffset:0; } }
 
   @media (max-width:640px){
     header.masthead .meta{ text-align:left; }
@@ -238,7 +262,7 @@
 
   <section>
     <h2 style="font-size:16px; margin-bottom:8px;">Hawkish dissents cast against a hold</h2>
-    <div class="chart-note" style="font-size:12px; font-style:italic; color:#3a4249; margin-bottom:8px;">Every meeting where one or more members dissented for a tighter policy while the committee held rates, and how many meetings passed before the rate actually next changed.</div>
+    <div class="chart-note sans" style="font-size:12px; font-style:normal; color:var(--muted); margin-bottom:8px;">Every meeting where one or more members dissented for a tighter policy while the committee held rates, and how many meetings passed before the rate actually next changed.</div>
     <div id="casesWrap"></div>
   </section>
 
@@ -445,7 +469,12 @@ MEETINGS.forEach(m=>{
   }
 });
 d += ` L ${xScale(dateEnd.toISOString().slice(0,10))} ${yScaleU(MEETINGS[MEETINGS.length-1].new_upper)}`;
-svg.appendChild(el('path', {d, class:'stepline'}));
+const stepPath = el('path', {d, class:'stepline'});
+svg.appendChild(stepPath);
+/* draw-in animation, matching ruffer.co.uk's own chart component (stroke-dasharray/dashoffset) */
+const pathLen = stepPath.getTotalLength();
+stepPath.style.strokeDasharray = pathLen;
+stepPath.style.strokeDashoffset = pathLen;
 
 /* move ticks in the gap strip */
 const gTicks = el('g', {});
@@ -525,7 +554,7 @@ function showMeeting(m){
     const ul = document.createElement('ul');
     m.dissenters.forEach(dd=>{
       const li = document.createElement('li');
-      const tag = document.createElement('span'); tag.className='tag'; tag.style.borderColor='var(--ink)';
+      const tag = document.createElement('span'); tag.className='tag sans';
       tag.style.color = `var(--${dd.cls})`; tag.textContent = dd.cls;
       li.appendChild(tag);
       li.appendChild(document.createTextNode(dd.full + ' — ' + dd.quote + '.'));
@@ -533,7 +562,7 @@ function showMeeting(m){
     });
     body.appendChild(ul);
   } else {
-    const p = document.createElement('div'); p.style.fontStyle='italic'; p.style.color='#3a4249'; p.style.marginTop='4px';
+    const p = document.createElement('div'); p.style.fontStyle='italic'; p.style.color='var(--muted)'; p.style.marginTop='4px';
     p.textContent = 'Unanimous.';
     body.appendChild(p);
   }

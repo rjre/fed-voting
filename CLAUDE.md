@@ -11,6 +11,15 @@ hand-rolled SVG, no chart library, no framework, no build step. Do not introduce
 The entire dataset (87 meetings) is embedded as a JSON literal (`const MEETINGS = [...]`)
 inside the `<script>` tag — there is no separate data file and no fetch() call.
 
+## Workflow standing instructions
+
+- **Commit and push straight to `main`.** No feature-branch/PR workflow for this repo —
+  the user asked for this explicitly. (An earlier `claude/fomc-dissent-chart-...`
+  branch exists from before that instruction; it's stale, ignore it.)
+- **Formatting standard is ruffer.co.uk**, not an invented palette (see below) — if the
+  visual design ever needs revisiting, re-derive it from Ruffer's own site rather than
+  from taste or a generic dataviz default.
+
 ## Data provenance — how the dataset was built
 
 Three sources, cross-checked against each other:
@@ -108,33 +117,63 @@ produces and were reported to the user before any styling was done)
   - 2016-11-02 (George, Mester) → 2016-12-14, 1 meeting later
   - 2026-07-29 (Hammack, Kashkari, Logan) → no change through end of sample
 
-## Design spec (institutional tally sheet)
+## Design spec — ruffer.co.uk house style
 
-Fixed palette, no gradients, no rounded corners, no dark-mode variant (this is a
-single deliberate print-like aesthetic, not a themeable dashboard):
+The page was first built with an invented "institutional tally sheet" palette
+(parchment background, Archivo Narrow / Spectral / IBM Plex Mono). The user then
+asked for **ruffer.co.uk's actual formatting standards** instead, so the chrome was
+re-derived from Ruffer's real stylesheet and chart component, not from taste. If
+this is ever redone, re-pull from Ruffer rather than reusing the table below from
+memory — their site can change.
 
-| Token | Hex | Use |
-|---|---|---|
-| `--bg` | `#EDEFEE` | page background |
-| `--ink` | `#14181C` | text, lines, borders |
-| `--tighter` | `#7A2B2B` | dissent for tighter policy |
-| `--easier` | `#2E5C7A` | dissent for easier policy |
-| `--other` | `#7A6A32` | dissent on other/procedural grounds |
-| `--assent` | `#A8AFAC` | assenting majority baseline cell |
-| `--hair` | `#C9CFCB` | hairline gridlines |
+How it was derived (repeatable): fetch `https://www.ruffer.co.uk`, find its main
+CSS bundle link (`/bundles/styles?v=...`) plus `/assets/css/rf-graph.css` (their
+own chart component), download both, and grep for `font-family`, hex colors, and
+`h1`/`h2`/`body` rules. That's what produced the table below — it's read directly
+off their production CSS, not guessed.
 
-Fonts (Google Fonts, loaded via `<link>`, no self-hosting): **Archivo Narrow 700**
-for labels/headers, **Spectral** for body prose, **IBM Plex Mono** for figures/
-dates/tabular numbers. This palette was run through the dataviz skill's
-`validate_palette.js` — it fails the formal lightness/chroma/contrast checks
-because it's a deliberately muted, desaturated "institutional" palette rather
-than a high-chroma categorical scheme. Compensated with secondary encoding per
-the skill's own escape hatch: every cell has a 0.6px ink stroke (so the low-
-contrast assent grey stays legible against the background), and identity never
-depends on color alone — the hover/focus readout always spells out each
-dissenter's name and classification in text, and the full data table repeats it
-with a colored-dot + text label. Don't just re-run the validator and "fix" the
-hexes — the muted look is the brief.
+No gradients, no rounded corners (kept from the original brief — Ruffer's own site
+uses a little border-radius on buttons, but square held here), no dark-mode variant.
+
+| Token | Hex | Use | Source |
+|---|---|---|---|
+| `--bg` | `#ffffff` | page background | Ruffer `body{background-color:#fff}` |
+| `--panel` | `#f8f8f8` | card/panel background | Ruffer `.grey-panel{background:#F8F8F8}` |
+| `--ink` | `#383838` | body text | Ruffer `body{color:#383838}` |
+| `--heading` | `#086132` | headings, rate line, links-on-hover | Ruffer `.h1,.h2{color:#086132}` |
+| `--accent` | `#4e9a33` | default link color | Ruffer `a{color:#4e9a33}` (most-used hex in their bundle after white) |
+| `--muted` | `#797979` | axis labels, captions, secondary text | Ruffer's own `rf-graph.css` axis-tick color |
+| `--hair` | `#e5e5e5` (chart gridlines `#e9e9e9`) | hairlines/rules | close to Ruffer's `path.domain{stroke:#E9E9E9}` |
+| `--tighter` | `#7A2B2B` | dissent for tighter policy | kept from the original brief — not a Ruffer color, chosen to stay legible and distinct from the brand green |
+| `--easier` | `#2E5C7A` | dissent for easier policy | ditto |
+| `--other` | `#8a6d1f` | dissent on other/procedural grounds | ditto |
+| `--assent` | `#b3b3b3` | assenting majority baseline cell | swapped to a grey Ruffer actually uses |
+
+**Fonts — no webfonts fetched at all**: **Georgia** (system font, present on every
+OS) for headings and body copy, matching Ruffer's `body{font-family:"Georgia W01
+Regular"}`/`.h1{font-family:"Georgia W01 Regular"}` (their Georgia is a paid
+Monotype cut loaded from fonts.net — not something to license or hot-link, so
+plain system Georgia stands in). A system sans stack — `'Avenir Next', Avenir,
+'Segoe UI', Roboto, Helvetica, Arial, sans-serif` — stands in for their self-hosted
+Avenir LT W01 (same reasoning) for labels, nav-style chrome, axis text, and table
+headers. Figures/dates use a plain `ui-monospace` stack. Headings are **not**
+bold/uppercase — Ruffer's `.h1`/`.h2` are `font-weight:normal`; only small
+label-style text (legend, table headers, tags) is uppercase+bold, in the sans
+stack, mirroring how Ruffer treats its own nav/small-print chrome vs. its
+Georgia editorial voice.
+
+The categorical dissent colors (tighter/easier/other/assent) were deliberately
+**not** replaced with Ruffer greens — using the brand color for one dissent
+category would read as "this is what the brand means," which isn't the point of
+a classification channel. Only the chrome (backgrounds, rules, headings, body
+text, links, axis ink) was pulled from Ruffer; the semantic/categorical encoding
+stayed put. Contrast/legibility compensation (thin borders on every ballot cell,
+text always spelling out the classification alongside color, per the dataviz
+skill's escape hatch for a muted palette) is unchanged from the original build.
+
+The stepped rate line draws in on load (`stroke-dasharray`/`stroke-dashoffset`
+animated via `getTotalLength()`, `prefers-reduced-motion` respected) — lifted
+from Ruffer's own `rf-graph.css` `@keyframes rf-graph-dash`, same technique.
 
 ## Chart mechanics
 
