@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOMC Dissents vs. the Target Rate Path, 2016&ndash;2026</title>
+<meta name="description" content="Every FOMC dissenting vote, Jan 2016–Jul 2026, plotted against the fed funds target path. Tests whether the number of members voting against the chair predicts the committee's next rate decision.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23EDEFEE'/%3E%3Crect x='2' y='7' width='2' height='7' fill='%23A8AFAC' stroke='%2314181C' stroke-width='0.5'/%3E%3Crect x='7' y='3' width='2' height='11' fill='%237A2B2B' stroke='%2314181C' stroke-width='0.5'/%3E%3Crect x='12' y='5' width='2' height='9' fill='%232E5C7A' stroke='%2314181C' stroke-width='0.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDEFEE;
+    --ink:#14181C;
+    --tighter:#7A2B2B;
+    --easier:#2E5C7A;
+    --other:#7A6A32;
+    --assent:#A8AFAC;
+    --hair:#C9CFCB;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Spectral', Georgia, serif;
+  }
+  ::selection{ background:var(--ink); color:var(--bg); }
+  h1,h2,h3,.label,.mono-label{
+    font-family:'Archivo Narrow', sans-serif;
+    font-weight:700;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    margin:0;
+  }
+  .figure, .mono, table, .tooltip-value, kbd{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+  }
+  a{ color:var(--ink); }
+  a:hover{ color:var(--tighter); }
+
+  .sheet{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 22px 80px;
+  }
+
+  header.masthead{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  header.masthead h1{
+    font-size:26px;
+    line-height:1.15;
+  }
+  header.masthead .sub{
+    font-family:'Spectral', serif;
+    font-style:italic;
+    font-size:14px;
+    color:#3a4249;
+    max-width:640px;
+    margin-top:6px;
+  }
+  header.masthead .meta{
+    font-size:11px;
+    text-align:right;
+    line-height:1.6;
+    color:#3a4249;
+  }
+  header.masthead .meta .mono{ font-size:11px; }
+
+  section{ margin-bottom:36px; }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    align-items:center;
+    font-size:12px;
+    padding:10px 0 16px;
+    border-bottom:1px solid var(--hair);
+    margin-bottom:14px;
+  }
+  .legend .item{ display:flex; align-items:center; gap:7px; }
+  .legend .swatch{ width:13px; height:13px; border:1px solid var(--ink); flex:none; }
+  .legend .swatch.line{ width:18px; height:0; border:none; border-top:2px solid var(--ink); }
+  .legend .item span.txt{ font-family:'Archivo Narrow', sans-serif; font-weight:700; font-size:11px; letter-spacing:.02em; text-transform:uppercase; }
+
+  .chart-card{
+    border:1px solid var(--ink);
+    background:var(--bg);
+    padding:18px 18px 8px;
+  }
+  .chart-card .chart-title{ font-size:13px; margin-bottom:2px; }
+  .chart-card .chart-note{ font-size:11px; color:#3a4249; font-style:italic; margin-bottom:10px; }
+
+  svg#chart{ width:100%; height:auto; display:block; }
+  .hitcol{ fill:transparent; cursor:crosshair; }
+  .hitcol:focus{ outline:none; }
+  .hitcol:focus + .focus-ring{ visibility:visible; }
+
+  .axislabel{ font-family:'IBM Plex Mono'; font-size:10px; fill:var(--ink); }
+  .axistick{ stroke:var(--hair); stroke-width:1; }
+  .stepline{ fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:miter; stroke-linecap:butt; }
+  .crosshair{ stroke:var(--ink); stroke-width:1; visibility:hidden; }
+  .hoverdot{ fill:var(--ink); visibility:hidden; }
+  .colring{ fill:none; stroke:var(--ink); stroke-width:1.5; visibility:hidden; }
+  .movetick{ fill:var(--ink); }
+  .erabound{ stroke:var(--ink); stroke-width:1; opacity:.55; }
+  .eralabel{ font-family:'Archivo Narrow'; font-weight:700; font-size:10px; letter-spacing:.04em; text-transform:uppercase; fill:var(--ink); opacity:.7; }
+
+  .cell-assent{ fill:var(--assent); stroke:var(--ink); stroke-width:.6; }
+  .cell-tighter{ fill:var(--tighter); stroke:var(--ink); stroke-width:.6; }
+  .cell-easier{ fill:var(--easier); stroke:var(--ink); stroke-width:.6; }
+  .cell-other{ fill:var(--other); stroke:var(--ink); stroke-width:.6; }
+
+  .readout{
+    border:1px solid var(--ink);
+    border-top:none;
+    padding:16px 18px;
+    min-height:112px;
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+  .readout .rd-date{ font-size:15px; white-space:nowrap; }
+  .readout .rd-body{ flex:1; min-width:260px; font-size:13px; line-height:1.55; }
+  .readout .rd-vote{ font-size:12px; margin-bottom:6px; }
+  .readout .rd-vote b{ font-family:'IBM Plex Mono'; font-weight:600; }
+  .readout ul{ margin:4px 0 0; padding-left:18px; }
+  .readout li{ margin-bottom:5px; }
+  .readout .tag{
+    display:inline-block;
+    font-family:'Archivo Narrow'; font-weight:700; font-size:10px;
+    text-transform:uppercase; letter-spacing:.03em;
+    padding:1px 5px; border:1px solid var(--ink); margin-right:5px;
+  }
+  .readout .src{ font-size:11px; margin-top:8px; display:block; }
+  .readout .placeholder{ font-style:italic; color:#3a4249; font-size:13px; }
+
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
+    gap:1px;
+    background:var(--ink);
+    border:1px solid var(--ink);
+  }
+  .stat-box{ background:var(--bg); padding:16px 18px; }
+  .stat-box .k{ font-size:11px; color:#3a4249; margin-bottom:8px; }
+  .stat-box .v{ font-size:26px; font-weight:600; }
+  .stat-box .v .n{ font-size:12px; color:#3a4249; font-weight:400; margin-left:6px; }
+  .stat-box .foot{ font-size:11px; margin-top:8px; color:#3a4249; }
+
+  table.cases{ width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+  table.cases th, table.cases td{ border:1px solid var(--hair); padding:6px 8px; text-align:left; }
+  table.cases th{ font-family:'Archivo Narrow'; font-weight:700; text-transform:uppercase; font-size:10px; letter-spacing:.03em; background:rgba(20,24,28,.04); }
+  table.cases td.tighter, table.cases td .dot-tighter{ color:var(--tighter); }
+
+  details.datatable{ border:1px solid var(--ink); }
+  details.datatable > summary{
+    cursor:pointer; padding:12px 16px; font-family:'Archivo Narrow'; font-weight:700;
+    font-size:12px; text-transform:uppercase; letter-spacing:.03em;
+    list-style:none;
+  }
+  details.datatable > summary::-webkit-details-marker{ display:none; }
+  details.datatable > summary:before{ content:"▸ "; }
+  details.datatable[open] > summary:before{ content:"▾ "; }
+  details.datatable .tbl-wrap{ overflow-x:auto; border-top:1px solid var(--ink); }
+  table.full{ width:100%; border-collapse:collapse; font-size:11.5px; white-space:nowrap; }
+  table.full th, table.full td{ border-bottom:1px solid var(--hair); padding:5px 9px; text-align:left; }
+  table.full th{ position:sticky; top:0; background:var(--bg); font-family:'Archivo Narrow'; font-weight:700; text-transform:uppercase; font-size:10px; }
+  table.full td.num{ text-align:right; }
+  table.full tr.dissent-row td{ background:rgba(20,24,28,.03); }
+  table.full .clsdot{ display:inline-block; width:8px; height:8px; margin-right:4px; border:1px solid var(--ink); vertical-align:middle; }
+
+  footer{
+    margin-top:44px;
+    padding-top:16px;
+    border-top:2px solid var(--ink);
+    font-size:11.5px;
+    color:#3a4249;
+    line-height:1.6;
+  }
+  footer a{ text-decoration:underline; }
+  footer .colophon{ margin-top:10px; font-style:italic; }
+
+  @media (max-width:640px){
+    header.masthead .meta{ text-align:left; }
+    .readout{ flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="masthead">
+    <div>
+      <h1>FOMC Dissents vs. the Target Rate Path</h1>
+      <div class="sub">Every recorded dissenting vote against the chair, January 2016 through July 2026, set against the fed funds target range. Does the size of the dissent bloc predict the committee's next move?</div>
+    </div>
+    <div class="meta">
+      <div>87 meetings &middot; 46 dissenting votes</div>
+      <div class="mono">Source: St. Louis Fed dissent tracker (upd. 7/31/2026)<br>+ federalreserve.gov statements + FRED DFEDTARU/L</div>
+    </div>
+  </header>
+
+  <section>
+    <div class="legend" id="legend">
+      <div class="item"><span class="swatch line"></span><span class="txt">Target range, upper bound</span></div>
+      <div class="item"><span class="swatch" style="background:var(--assent)"></span><span class="txt">Assenting majority</span></div>
+      <div class="item"><span class="swatch" style="background:var(--tighter)"></span><span class="txt">Dissent &mdash; tighter</span></div>
+      <div class="item"><span class="swatch" style="background:var(--easier)"></span><span class="txt">Dissent &mdash; easier</span></div>
+      <div class="item"><span class="swatch" style="background:var(--other)"></span><span class="txt">Dissent &mdash; other grounds</span></div>
+      <div class="item">&#9650;&#9660; <span class="txt">meeting changed the rate</span></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Target range (upper bound, stepped) and dissent ballots by meeting</div>
+      <div class="chart-note">Hover or tab through a column to read that meeting's vote line below. Dissents are classified against the action actually taken, not the prior setting.</div>
+      <svg id="chart" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Chart of FOMC target rate and dissenting votes, 2016 to 2026"></svg>
+    </div>
+    <div class="readout" id="readout" aria-live="polite">
+      <div class="placeholder">Hover or focus a column above to reproduce that meeting's vote line here.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 style="font-size:16px; margin-bottom:12px;">What the dissents say about the next move</h2>
+    <div class="stats-grid" id="statsGrid"></div>
+  </section>
+
+  <section>
+    <h2 style="font-size:16px; margin-bottom:8px;">Hawkish dissents cast against a hold</h2>
+    <div class="chart-note" style="font-size:12px; font-style:italic; color:#3a4249; margin-bottom:8px;">Every meeting where one or more members dissented for a tighter policy while the committee held rates, and how many meetings passed before the rate actually next changed.</div>
+    <div id="casesWrap"></div>
+  </section>
+
+  <section>
+    <details class="datatable" id="dataTableDetails">
+      <summary>All 87 meetings — full data table with sources</summary>
+      <div class="tbl-wrap">
+        <table class="full" id="fullTable"></table>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <div>Dissent counts, chair, and vote totals are drawn from the Federal Reserve Bank of St. Louis's <a href="https://www.stlouisfed.org/on-the-economy/2014/september/a-history-of-fomc-dissents" target="_blank" rel="noopener">"A History of FOMC Dissents"</a> tracking file (<a href="https://www.stlouisfed.org/-/media/project/frbstl/stlouisfed/files/excel/fomc_dissents_data.xlsx" target="_blank" rel="noopener">fomc_dissents_data.xlsx</a>, last updated 7/31/2026), which already classifies each dissent as tighter/easier/other relative to the action taken. Target-range levels and action sizes are derived from FRED series <a href="https://fred.stlouisfed.org/series/DFEDTARU" target="_blank" rel="noopener">DFEDTARU</a>/<a href="https://fred.stlouisfed.org/series/DFEDTARL" target="_blank" rel="noopener">DFEDTARL</a>, matched to each meeting date. Vote-line wording and named preferences are quoted from the relevant federalreserve.gov statement, linked per row in the table above and in the hover readout.</div>
+    <div class="colophon">No chart library, no framework, no build step — hand-rolled SVG and vanilla JS reading a single embedded dataset.</div>
+  </footer>
+
+</div>
+
+<script>
+const MEETINGS = [{"date":"2016-01-27","chair":"Yellen","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20160127a.htm"},{"date":"2016-03-16","chair":"Yellen","voters":10,"votes_for":9,"votes_against":1,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Esther L. George"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20160316a.htm"},{"date":"2016-04-27","chair":"Yellen","voters":10,"votes_for":9,"votes_against":1,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Esther L. George"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20160427a.htm"},{"date":"2016-06-15","chair":"Yellen","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20160615a.htm"},{"date":"2016-07-27","chair":"Yellen","voters":10,"votes_for":9,"votes_against":1,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Esther L. George"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20160727a.htm"},{"date":"2016-09-21","chair":"Yellen","voters":10,"votes_for":7,"votes_against":3,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred at this meeting to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Esther L. George"},{"name":"Mester","cls":"tighter","quote":"preferred at this meeting to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Loretta J. Mester"},{"name":"Rosengren","cls":"tighter","quote":"preferred at this meeting to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Eric S. Rosengren"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20160921a.htm"},{"date":"2016-11-02","chair":"Yellen","voters":10,"votes_for":8,"votes_against":2,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.5,"new_lower":0.25,"action_bp":0,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred at this meeting to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Esther L. George"},{"name":"Mester","cls":"tighter","quote":"preferred at this meeting to raise the target range for the federal funds rate to 1/2 to 3/4 percent","full":"Loretta J. Mester"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20161102a.htm"},{"date":"2016-12-14","chair":"Yellen","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.5,"prior_lower":0.25,"new_upper":0.75,"new_lower":0.5,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20161214a.htm"},{"date":"2017-02-01","chair":"Yellen","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.75,"prior_lower":0.5,"new_upper":0.75,"new_lower":0.5,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20170201a.htm"},{"date":"2017-03-15","chair":"Yellen","voters":10,"votes_for":9,"votes_against":1,"prior_upper":0.75,"prior_lower":0.5,"new_upper":1.0,"new_lower":0.75,"action_bp":25,"dissenters":[{"name":"Kashkari","cls":"easier","quote":"preferred at this meeting to maintain the existing target range for the federal funds rate","full":"Neel Kashkari"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20170315a.htm"},{"date":"2017-05-03","chair":"Yellen","voters":9,"votes_for":9,"votes_against":0,"prior_upper":1.0,"prior_lower":0.75,"new_upper":1.0,"new_lower":0.75,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20170503a.htm"},{"date":"2017-06-14","chair":"Yellen","voters":9,"votes_for":8,"votes_against":1,"prior_upper":1.0,"prior_lower":0.75,"new_upper":1.25,"new_lower":1.0,"action_bp":25,"dissenters":[{"name":"Kashkari","cls":"easier","quote":"preferred to maintain the existing target range for the federal funds rate","full":"Neel Kashkari"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20170614a.htm"},{"date":"2017-07-26","chair":"Yellen","voters":9,"votes_for":9,"votes_against":0,"prior_upper":1.25,"prior_lower":1.0,"new_upper":1.25,"new_lower":1.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20170726a.htm"},{"date":"2017-09-20","chair":"Yellen","voters":9,"votes_for":9,"votes_against":0,"prior_upper":1.25,"prior_lower":1.0,"new_upper":1.25,"new_lower":1.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20170920a.htm"},{"date":"2017-11-01","chair":"Yellen","voters":9,"votes_for":9,"votes_against":0,"prior_upper":1.25,"prior_lower":1.0,"new_upper":1.25,"new_lower":1.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20171101a.htm"},{"date":"2017-12-13","chair":"Yellen","voters":9,"votes_for":7,"votes_against":2,"prior_upper":1.25,"prior_lower":1.0,"new_upper":1.5,"new_lower":1.25,"action_bp":25,"dissenters":[{"name":"Evans","cls":"easier","quote":"preferred to maintain the existing target range for the federal funds rate","full":"Charles L. Evans"},{"name":"Kashkari","cls":"easier","quote":"preferred to maintain the existing target range for the federal funds rate","full":"Neel Kashkari"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20171213a.htm"},{"date":"2018-01-31","chair":"Yellen","voters":9,"votes_for":9,"votes_against":0,"prior_upper":1.5,"prior_lower":1.25,"new_upper":1.5,"new_lower":1.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20180131a.htm"},{"date":"2018-03-21","chair":"Powell","voters":8,"votes_for":8,"votes_against":0,"prior_upper":1.5,"prior_lower":1.25,"new_upper":1.75,"new_lower":1.5,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20180321a.htm"},{"date":"2018-05-02","chair":"Powell","voters":8,"votes_for":8,"votes_against":0,"prior_upper":1.75,"prior_lower":1.5,"new_upper":1.75,"new_lower":1.5,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20180502a.htm"},{"date":"2018-06-13","chair":"Powell","voters":8,"votes_for":8,"votes_against":0,"prior_upper":1.75,"prior_lower":1.5,"new_upper":2.0,"new_lower":1.75,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20180613a.htm"},{"date":"2018-08-01","chair":"Powell","voters":8,"votes_for":8,"votes_against":0,"prior_upper":2.0,"prior_lower":1.75,"new_upper":2.0,"new_lower":1.75,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20180801a.htm"},{"date":"2018-09-26","chair":"Powell","voters":9,"votes_for":9,"votes_against":0,"prior_upper":2.0,"prior_lower":1.75,"new_upper":2.25,"new_lower":2.0,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20180926a.htm"},{"date":"2018-11-08","chair":"Powell","voters":9,"votes_for":9,"votes_against":0,"prior_upper":2.25,"prior_lower":2.0,"new_upper":2.25,"new_lower":2.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20181108a.htm"},{"date":"2018-12-19","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":2.25,"prior_lower":2.0,"new_upper":2.5,"new_lower":2.25,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20181219a.htm"},{"date":"2019-01-30","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":2.5,"prior_lower":2.25,"new_upper":2.5,"new_lower":2.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20190130a.htm"},{"date":"2019-03-20","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":2.5,"prior_lower":2.25,"new_upper":2.5,"new_lower":2.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20190320a.htm"},{"date":"2019-05-01","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":2.5,"prior_lower":2.25,"new_upper":2.5,"new_lower":2.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20190501a.htm"},{"date":"2019-06-19","chair":"Powell","voters":10,"votes_for":9,"votes_against":1,"prior_upper":2.5,"prior_lower":2.25,"new_upper":2.5,"new_lower":2.25,"action_bp":0,"dissenters":[{"name":"Bullard","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 25 basis points","full":"James Bullard"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20190619a.htm"},{"date":"2019-07-31","chair":"Powell","voters":10,"votes_for":8,"votes_against":2,"prior_upper":2.5,"prior_lower":2.25,"new_upper":2.25,"new_lower":2.0,"action_bp":-25,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred to maintain the target range for the federal funds rate at 2-1/4 to 2-1/2 percent","full":"Esther L. George"},{"name":"Rosengren","cls":"tighter","quote":"preferred to maintain the target range for the federal funds rate at 2-1/4 to 2-1/2 percent","full":"Eric S. Rosengren"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20190731a.htm"},{"date":"2019-09-18","chair":"Powell","voters":10,"votes_for":7,"votes_against":3,"prior_upper":2.25,"prior_lower":2.0,"new_upper":2.0,"new_lower":1.75,"action_bp":-25,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred to maintain the target range at 2 percent to 2-1/4 percent","full":"Esther L. George"},{"name":"Rosengren","cls":"tighter","quote":"preferred to maintain the target range at 2 percent to 2-1/4 percent","full":"Eric S. Rosengren"},{"name":"Bullard","cls":"easier","quote":"preferred to lower the target range for the federal funds rate to 1-1/2 to 1-3/4 percent","full":"James Bullard"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20190918a.htm"},{"date":"2019-10-30","chair":"Powell","voters":10,"votes_for":8,"votes_against":2,"prior_upper":2.0,"prior_lower":1.75,"new_upper":1.75,"new_lower":1.5,"action_bp":-25,"dissenters":[{"name":"George","cls":"tighter","quote":"preferred to maintain the target range at 1-3/4 percent to 2 percent","full":"Esther L. George"},{"name":"Rosengren","cls":"tighter","quote":"preferred to maintain the target range at 1-3/4 percent to 2 percent","full":"Eric S. Rosengren"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20191030a.htm"},{"date":"2019-12-11","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":1.75,"prior_lower":1.5,"new_upper":1.75,"new_lower":1.5,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20191211a.htm"},{"date":"2020-01-29","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":1.75,"prior_lower":1.5,"new_upper":1.75,"new_lower":1.5,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200129a.htm"},{"date":"2020-03-03","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":1.75,"prior_lower":1.5,"new_upper":1.25,"new_lower":1.0,"action_bp":-50,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200303a.htm"},{"date":"2020-03-15","chair":"Powell","voters":10,"votes_for":9,"votes_against":1,"prior_upper":1.25,"prior_lower":1.0,"new_upper":0.25,"new_lower":0.0,"action_bp":-100,"dissenters":[{"name":"Mester","cls":"tighter","quote":"was fully supportive of actions to promote market functioning but preferred to reduce the target range for the federal funds rate to 1/2 to 3/4 percent at this meeting","full":"Loretta J. Mester"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm"},{"date":"2020-03-23","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200323a.htm"},{"date":"2020-04-29","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200429a.htm"},{"date":"2020-06-10","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200610a.htm"},{"date":"2020-07-29","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200729a.htm"},{"date":"2020-09-16","chair":"Powell","voters":10,"votes_for":8,"votes_against":2,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[{"name":"Kaplan","cls":"other","quote":"preferred to retain greater policy rate flexibility beyond the point at which the economy has weathered recent events and is on track to achieve the Committee's goals","full":"Robert S. Kaplan"},{"name":"Kashkari","cls":"other","quote":"preferred that the Committee indicate rates would remain near zero until core inflation reached 2 percent on a sustained basis","full":"Neel Kashkari"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20200916a.htm"},{"date":"2020-11-05","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20201105a.htm"},{"date":"2020-12-16","chair":"Powell","voters":10,"votes_for":10,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20201216a.htm"},{"date":"2021-01-27","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20210127a.htm"},{"date":"2021-03-17","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20210317a.htm"},{"date":"2021-04-28","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20210428a.htm"},{"date":"2021-06-16","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20210616a.htm"},{"date":"2021-07-28","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20210728a.htm"},{"date":"2021-09-22","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20210922a.htm"},{"date":"2021-11-03","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20211103a.htm"},{"date":"2021-12-15","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20211215a.htm"},{"date":"2022-01-26","chair":"Powell","voters":9,"votes_for":9,"votes_against":0,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.25,"new_lower":0.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20220126a.htm"},{"date":"2022-03-16","chair":"Powell","voters":9,"votes_for":8,"votes_against":1,"prior_upper":0.25,"prior_lower":0.0,"new_upper":0.5,"new_lower":0.25,"action_bp":25,"dissenters":[{"name":"Bullard","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate by 0.5 percentage point to 1/2 to 3/4 percent","full":"James Bullard"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20220316a.htm"},{"date":"2022-05-04","chair":"Powell","voters":9,"votes_for":9,"votes_against":0,"prior_upper":0.5,"prior_lower":0.25,"new_upper":1.0,"new_lower":0.75,"action_bp":50,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20220504a.htm"},{"date":"2022-06-15","chair":"Powell","voters":11,"votes_for":10,"votes_against":1,"prior_upper":1.0,"prior_lower":0.75,"new_upper":1.75,"new_lower":1.5,"action_bp":75,"dissenters":[{"name":"George","cls":"easier","quote":"preferred to raise the target range for the federal funds rate by 0.5 percentage point to 1-1/4 to 1-1/2 percent","full":"Esther L. George"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20220615a.htm"},{"date":"2022-07-27","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":1.75,"prior_lower":1.5,"new_upper":2.5,"new_lower":2.25,"action_bp":75,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20220727a.htm"},{"date":"2022-09-21","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":2.5,"prior_lower":2.25,"new_upper":3.25,"new_lower":3.0,"action_bp":75,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20220921a.htm"},{"date":"2022-11-02","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":3.25,"prior_lower":3.0,"new_upper":4.0,"new_lower":3.75,"action_bp":75,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20221102a.htm"},{"date":"2022-12-14","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":4.0,"prior_lower":3.75,"new_upper":4.5,"new_lower":4.25,"action_bp":50,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20221214a.htm"},{"date":"2023-02-01","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.75,"new_lower":4.5,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20230201a.htm"},{"date":"2023-03-22","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":4.75,"prior_lower":4.5,"new_upper":5.0,"new_lower":4.75,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20230322a.htm"},{"date":"2023-05-03","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":5.0,"prior_lower":4.75,"new_upper":5.25,"new_lower":5.0,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20230503a.htm"},{"date":"2023-06-14","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":5.25,"prior_lower":5.0,"new_upper":5.25,"new_lower":5.0,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20230614a.htm"},{"date":"2023-07-26","chair":"Powell","voters":11,"votes_for":11,"votes_against":0,"prior_upper":5.25,"prior_lower":5.0,"new_upper":5.5,"new_lower":5.25,"action_bp":25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm"},{"date":"2023-09-20","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20230920a.htm"},{"date":"2023-11-01","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20231101a.htm"},{"date":"2023-12-13","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20231213a.htm"},{"date":"2024-01-31","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20240131a.htm"},{"date":"2024-03-20","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20240320a.htm"},{"date":"2024-05-01","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20240501a.htm"},{"date":"2024-06-12","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20240612a.htm"},{"date":"2024-07-31","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.5,"new_lower":5.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20240731a.htm"},{"date":"2024-09-18","chair":"Powell","voters":12,"votes_for":11,"votes_against":1,"prior_upper":5.5,"prior_lower":5.25,"new_upper":5.0,"new_lower":4.75,"action_bp":-50,"dissenters":[{"name":"Bowman","cls":"tighter","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Michelle W. Bowman"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20240918a.htm"},{"date":"2024-11-07","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":5.0,"prior_lower":4.75,"new_upper":4.75,"new_lower":4.5,"action_bp":-25,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20241107a.htm"},{"date":"2024-12-18","chair":"Powell","voters":12,"votes_for":11,"votes_against":1,"prior_upper":4.75,"prior_lower":4.5,"new_upper":4.5,"new_lower":4.25,"action_bp":-25,"dissenters":[{"name":"Hammack","cls":"tighter","quote":"preferred to maintain the target range for the federal funds rate at 4-1/2 to 4-3/4 percent","full":"Beth M. Hammack"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20241218a.htm"},{"date":"2025-01-29","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.5,"new_lower":4.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20250129a.htm"},{"date":"2025-03-19","chair":"Powell","voters":12,"votes_for":11,"votes_against":1,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.5,"new_lower":4.25,"action_bp":0,"dissenters":[{"name":"Waller","cls":"other","quote":"supported no change for the federal funds target range but preferred to continue the current pace of decline in securities holdings","full":"Christopher J. Waller"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20250319a.htm"},{"date":"2025-05-07","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.5,"new_lower":4.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20250507a.htm"},{"date":"2025-06-18","chair":"Powell","voters":12,"votes_for":12,"votes_against":0,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.5,"new_lower":4.25,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20250618a.htm"},{"date":"2025-07-30","chair":"Powell","voters":11,"votes_for":9,"votes_against":2,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.5,"new_lower":4.25,"action_bp":0,"dissenters":[{"name":"Bowman","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Michelle W. Bowman"},{"name":"Waller","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Christopher J. Waller"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20250730a.htm"},{"date":"2025-09-17","chair":"Powell","voters":12,"votes_for":11,"votes_against":1,"prior_upper":4.5,"prior_lower":4.25,"new_upper":4.25,"new_lower":4.0,"action_bp":-25,"dissenters":[{"name":"Miran","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/2 percentage point at this meeting","full":"Stephen I. Miran"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20250917a.htm"},{"date":"2025-10-29","chair":"Powell","voters":12,"votes_for":10,"votes_against":2,"prior_upper":4.25,"prior_lower":4.0,"new_upper":4.0,"new_lower":3.75,"action_bp":-25,"dissenters":[{"name":"Schmid","cls":"tighter","quote":"preferred no change to the target range for the federal funds rate at this meeting","full":"Jeffrey R. Schmid"},{"name":"Miran","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/2 percentage point at this meeting","full":"Stephen I. Miran"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20251029a.htm"},{"date":"2025-12-10","chair":"Powell","voters":12,"votes_for":9,"votes_against":3,"prior_upper":4.0,"prior_lower":3.75,"new_upper":3.75,"new_lower":3.5,"action_bp":-25,"dissenters":[{"name":"Goolsbee","cls":"tighter","quote":"preferred no change to the target range for the federal funds rate at this meeting","full":"Austan D. Goolsbee"},{"name":"Schmid","cls":"tighter","quote":"preferred no change to the target range for the federal funds rate at this meeting","full":"Jeffrey R. Schmid"},{"name":"Miran","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/2 percentage point at this meeting","full":"Stephen I. Miran"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm"},{"date":"2026-01-28","chair":"Powell","voters":12,"votes_for":10,"votes_against":2,"prior_upper":3.75,"prior_lower":3.5,"new_upper":3.75,"new_lower":3.5,"action_bp":0,"dissenters":[{"name":"Miran","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Stephen I. Miran"},{"name":"Waller","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Christopher J. Waller"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260128a.htm"},{"date":"2026-03-18","chair":"Powell","voters":12,"votes_for":11,"votes_against":1,"prior_upper":3.75,"prior_lower":3.5,"new_upper":3.75,"new_lower":3.5,"action_bp":0,"dissenters":[{"name":"Miran","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Stephen I. Miran"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260318a.htm"},{"date":"2026-04-29","chair":"Powell","voters":12,"votes_for":8,"votes_against":4,"prior_upper":3.75,"prior_lower":3.5,"new_upper":3.75,"new_lower":3.5,"action_bp":0,"dissenters":[{"name":"Miran","cls":"easier","quote":"preferred to lower the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Stephen I. Miran"},{"name":"Hammack","cls":"other","quote":"supported the rate decision but did not support inclusion of an easing bias in the statement","full":"Beth M. Hammack"},{"name":"Kashkari","cls":"other","quote":"supported the rate decision but did not support inclusion of an easing bias in the statement","full":"Neel Kashkari"},{"name":"Logan","cls":"other","quote":"supported the rate decision but did not support inclusion of an easing bias in the statement","full":"Lorie K. Logan"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260429a.htm"},{"date":"2026-06-17","chair":"Warsh","voters":12,"votes_for":12,"votes_against":0,"prior_upper":3.75,"prior_lower":3.5,"new_upper":3.75,"new_lower":3.5,"action_bp":0,"dissenters":[],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm"},{"date":"2026-07-29","chair":"Warsh","voters":12,"votes_for":9,"votes_against":3,"prior_upper":3.75,"prior_lower":3.5,"new_upper":3.75,"new_lower":3.5,"action_bp":0,"dissenters":[{"name":"Hammack","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Beth M. Hammack"},{"name":"Kashkari","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Neel Kashkari"},{"name":"Logan","cls":"tighter","quote":"preferred to raise the target range for the federal funds rate by 1/4 percentage point at this meeting","full":"Lorie K. Logan"}],"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260729a.htm"}];
+
+/* ---------- derived stats (computed live from MEETINGS, not hard-coded) ---------- */
+MEETINGS.forEach((m,i)=>{
+  m.idx = i;
+  m.tighterCount = m.dissenters.filter(d=>d.cls==='tighter').length;
+  m.easierCount = m.dissenters.filter(d=>d.cls==='easier').length;
+  m.otherCount = m.dissenters.filter(d=>d.cls==='other').length;
+  m.netHawkish = m.tighterCount - m.easierCount;
+});
+
+function isHike(m){ return m.action_bp > 0; }
+function isMove(m){ return m.action_bp !== 0; }
+
+const withNext = MEETINGS.slice(0,-1);
+const hawkishMeetings = withNext.filter(m=>m.netHawkish>0);
+const pHikeGivenHawkish = hawkishMeetings.length
+  ? hawkishMeetings.filter(m=>isHike(MEETINGS[m.idx+1])).length / hawkishMeetings.length
+  : null;
+const pHikeBase = withNext.filter(m=>isHike(MEETINGS[m.idx+1])).length / withNext.length;
+
+const moved = MEETINGS.filter(isMove);
+const held = MEETINGS.filter(m=>!isMove(m));
+const meanDissentsMoved = moved.reduce((s,m)=>s+m.dissenters.length,0)/moved.length;
+const meanDissentsHeld = held.reduce((s,m)=>s+m.dissenters.length,0)/held.length;
+
+const hawkVsHoldCases = [];
+MEETINGS.forEach(m=>{
+  if(m.action_bp===0 && m.tighterCount>0){
+    let j=m.idx+1, count=0, next=null;
+    while(j<MEETINGS.length){ count++; if(MEETINGS[j].action_bp!==0){ next=MEETINGS[j]; break;} j++; }
+    hawkVsHoldCases.push({m, count, next});
+  }
+});
+
+/* ---------- render stat boxes ---------- */
+const statsGrid = document.getElementById('statsGrid');
+function statBox(k, v, n, foot){
+  const d=document.createElement('div'); d.className='stat-box';
+  d.innerHTML = `<div class="k">${k}</div><div class="v">${v}<span class="n">${n||''}</span></div><div class="foot">${foot||''}</div>`;
+  return d;
+}
+statsGrid.appendChild(statBox('P(hike at t+1 | net hawkish dissent at t)', (pHikeGivenHawkish*100).toFixed(1)+'%', `n=${hawkishMeetings.length}`, 'Meetings where tighter dissents outnumbered easier dissents.'));
+statsGrid.appendChild(statBox('P(hike at t+1), unconditional base rate', (pHikeBase*100).toFixed(1)+'%', `n=${withNext.length}`, 'Share of all meetings (with a following meeting) whose next meeting was a hike.'));
+statsGrid.appendChild(statBox('Mean dissents — meetings the rate MOVED', meanDissentsMoved.toFixed(2), `n=${moved.length}`, `${moved.reduce((s,m)=>s+m.dissenters.length,0)} total dissenting votes.`));
+statsGrid.appendChild(statBox('Mean dissents — meetings the rate HELD', meanDissentsHeld.toFixed(2), `n=${held.length}`, `${held.reduce((s,m)=>s+m.dissenters.length,0)} total dissenting votes.`));
+
+/* ---------- render hawkish-vs-hold case table ---------- */
+const casesWrap = document.getElementById('casesWrap');
+if(hawkVsHoldCases.length){
+  const tbl = document.createElement('table'); tbl.className='cases';
+  tbl.innerHTML = `<thead><tr><th>Meeting (held)</th><th>Tighter dissenter(s)</th><th>Next actual change</th><th>Meetings later</th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+  hawkVsHoldCases.forEach(c=>{
+    const tr=document.createElement('tr');
+    const names = c.m.dissenters.filter(d=>d.cls==='tighter').map(d=>d.full).join('; ');
+    const nextTxt = c.next ? `${c.next.date} (${c.next.action_bp>0?'+':''}${c.next.action_bp}bp)` : 'no change through end of sample';
+    tr.innerHTML = `<td class="mono">${c.m.date}</td><td>${names}</td><td class="mono">${nextTxt}</td><td class="mono">${c.next? c.count : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  casesWrap.appendChild(tbl);
+} else {
+  casesWrap.innerHTML = '<div class="placeholder">No such cases in this sample.</div>';
+}
+
+/* ---------- full data table ---------- */
+const fullTable = document.getElementById('fullTable');
+{
+  const thead = document.createElement('thead');
+  thead.innerHTML = `<tr><th>Date</th><th>Chair</th><th>Voters</th><th class="num">For</th><th class="num">Against</th><th>Range after</th><th class="num">Action</th><th>Dissenters</th><th>Source</th></tr>`;
+  fullTable.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  MEETINGS.forEach(m=>{
+    const tr = document.createElement('tr');
+    if(m.dissenters.length) tr.className='dissent-row';
+    const range = `${m.new_lower.toFixed(2)}–${m.new_upper.toFixed(2)}%`;
+    const action = m.action_bp===0 ? 'hold' : (m.action_bp>0?'+':'')+m.action_bp+'bp';
+    const dissTd = document.createElement('td');
+    if(m.dissenters.length){
+      m.dissenters.forEach((d,i)=>{
+        const dot = document.createElement('span'); dot.className='clsdot'; dot.style.background = `var(--${d.cls})`;
+        dissTd.appendChild(dot);
+        dissTd.appendChild(document.createTextNode(d.full + (i<m.dissenters.length-1?'; ':'')));
+      });
+    } else {
+      dissTd.textContent = '—';
+    }
+    const srcTd = document.createElement('td');
+    const a = document.createElement('a'); a.href = m.source; a.target='_blank'; a.rel='noopener'; a.textContent='statement ↗';
+    srcTd.appendChild(a);
+
+    tr.innerHTML = `<td class="mono">${m.date}</td><td>${m.chair}</td><td class="num mono">${m.voters}</td><td class="num mono">${m.votes_for}</td><td class="num mono">${m.votes_against}</td><td class="mono">${range}</td><td class="num mono">${action}</td>`;
+    tr.appendChild(dissTd);
+    tr.appendChild(srcTd);
+    tbody.appendChild(tr);
+  });
+  fullTable.appendChild(tbody);
+}
+
+/* ---------- chart geometry ---------- */
+const svg = document.getElementById('chart');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+const W = 1200, MARGIN = {left:52, right:20, top:10};
+const UPPER_H = 250, GAP_H = 40, LOWER_H = 190;
+const H = MARGIN.top + UPPER_H + GAP_H + LOWER_H + 30;
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+const plotW = W - MARGIN.left - MARGIN.right;
+const dateStart = new Date('2015-12-10');
+const dateEnd = new Date('2026-08-10');
+function xScale(dstr){
+  const d = new Date(dstr);
+  return MARGIN.left + (d - dateStart) / (dateEnd - dateStart) * plotW;
+}
+const yMax = 6.0;
+function yScaleU(r){
+  return MARGIN.top + UPPER_H - (r / yMax) * UPPER_H;
+}
+const lowerTop = MARGIN.top + UPPER_H + GAP_H;
+const lowerBottom = lowerTop + LOWER_H;
+const tickY = MARGIN.top + UPPER_H + GAP_H/2;
+
+/* gridlines + y axis, upper panel */
+const gAxis = el('g', {});
+for(let r=0; r<=6; r++){
+  const y = yScaleU(r);
+  gAxis.appendChild(el('line', {x1:MARGIN.left, x2:W-MARGIN.right, y1:y, y2:y, class:'axistick'}));
+  const t = el('text', {x:MARGIN.left-8, y:y+3, class:'axislabel', 'text-anchor':'end'});
+  t.textContent = r.toFixed(1)+'%';
+  gAxis.appendChild(t);
+}
+svg.appendChild(gAxis);
+
+/* year ticks on x, shared */
+const gXAxis = el('g', {});
+for(let yr=2016; yr<=2026; yr++){
+  const x = xScale(`${yr}-01-01`);
+  gXAxis.appendChild(el('line', {x1:x, x2:x, y1:MARGIN.top, y2:lowerBottom, class:'axistick'}));
+  const t = el('text', {x:x, y:lowerBottom+16, class:'axislabel', 'text-anchor':'middle'});
+  t.textContent = yr;
+  gXAxis.appendChild(t);
+}
+svg.appendChild(gXAxis);
+
+/* chair era boundaries */
+const eras = [
+  {chair:'Yellen', start:'2015-12-10'},
+  {chair:'Powell', start:'2018-02-05'},
+  {chair:'Warsh', start:'2026-05-22'},
+];
+const gEra = el('g', {});
+eras.forEach((e,i)=>{
+  if(i>0){
+    const x = xScale(e.start);
+    gEra.appendChild(el('line', {x1:x, x2:x, y1:MARGIN.top, y2:lowerBottom, class:'erabound'}));
+  }
+  const midStart = i>0 ? new Date(e.start) : dateStart;
+  const midEnd = i<eras.length-1 ? new Date(eras[i+1].start) : dateEnd;
+  const midX = xScale(midStart) + (xScale(midEnd)-xScale(midStart))/2;
+  const label = 'Chair: '+e.chair;
+  const estHalfWidth = label.length * 3.4;
+  let anchor = 'middle', tx = midX;
+  if(midX + estHalfWidth > W - MARGIN.right){ anchor = 'end'; tx = W - MARGIN.right; }
+  else if(midX - estHalfWidth < MARGIN.left){ anchor = 'start'; tx = MARGIN.left; }
+  const t = el('text', {x:tx, y:MARGIN.top+12, class:'eralabel', 'text-anchor':anchor});
+  t.textContent = label;
+  gEra.appendChild(t);
+});
+svg.appendChild(gEra);
+
+/* stepped rate line */
+let d = `M ${xScale(dateStart.toISOString().slice(0,10))} ${yScaleU(MEETINGS[0].prior_upper)}`;
+MEETINGS.forEach(m=>{
+  d += ` L ${xScale(m.date)} ${yScaleU(m.prior_upper)}`;
+  if(m.new_upper !== m.prior_upper){
+    d += ` L ${xScale(m.date)} ${yScaleU(m.new_upper)}`;
+  }
+});
+d += ` L ${xScale(dateEnd.toISOString().slice(0,10))} ${yScaleU(MEETINGS[MEETINGS.length-1].new_upper)}`;
+svg.appendChild(el('path', {d, class:'stepline'}));
+
+/* move ticks in the gap strip */
+const gTicks = el('g', {});
+MEETINGS.filter(isMove).forEach(m=>{
+  const x = xScale(m.date);
+  const up = m.action_bp > 0;
+  const p = up
+    ? `M ${x-4} ${tickY+4} L ${x+4} ${tickY+4} L ${x} ${tickY-5} Z`
+    : `M ${x-4} ${tickY-4} L ${x+4} ${tickY-4} L ${x} ${tickY+5} Z`;
+  gTicks.appendChild(el('path', {d:p, class:'movetick'}));
+});
+gTicks.appendChild(el('line', {x1:MARGIN.left, x2:W-MARGIN.right, y1:tickY, y2:tickY, class:'axistick'}));
+svg.appendChild(gTicks);
+
+/* ballot grid */
+const CELL_H = 15, GAP_V = 2, COL_W = 8;
+const gBallot = el('g', {});
+MEETINGS.forEach(m=>{
+  const x = xScale(m.date);
+  const stack = [{cls:'assent'}].concat(m.dissenters.map(d=>({cls:d.cls})));
+  stack.forEach((c,i)=>{
+    const y = lowerBottom - (i+1)*CELL_H - i*GAP_V;
+    gBallot.appendChild(el('rect', {
+      x:x-COL_W/2, y, width:COL_W, height:CELL_H,
+      class:'cell-'+c.cls
+    }));
+  });
+});
+svg.appendChild(gBallot);
+
+/* focus/hover overlay: crosshair, dot, column ring */
+const crosshair = el('line', {x1:0, x2:0, y1:MARGIN.top, y2:lowerBottom, class:'crosshair'});
+const hoverdot = el('circle', {r:4, class:'hoverdot'});
+const colring = el('rect', {class:'colring'});
+svg.appendChild(crosshair);
+svg.appendChild(colring);
+svg.appendChild(hoverdot);
+
+/* hit columns (bigger than the visual marks, per interaction spec) */
+const avgSpacing = plotW / (MEETINGS.length-1);
+const hitW = Math.max(COL_W+4, Math.min(avgSpacing, 30));
+const readout = document.getElementById('readout');
+
+function fmtRange(m){ return `${m.prior_lower.toFixed(2)}–${m.prior_upper.toFixed(2)}%`; }
+function fmtNewRange(m){ return `${m.new_lower.toFixed(2)}–${m.new_upper.toFixed(2)}%`; }
+function actionPhrase(m){
+  if(m.action_bp===0) return `held at ${fmtNewRange(m)}`;
+  const verb = m.action_bp>0 ? 'raised' : 'lowered';
+  return `${verb} ${Math.abs(m.action_bp)}bp, from ${fmtRange(m)} to ${fmtNewRange(m)}`;
+}
+function niceDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+}
+
+function showMeeting(m){
+  const x = xScale(m.date);
+  crosshair.setAttribute('x1', x); crosshair.setAttribute('x2', x);
+  crosshair.style.visibility = 'visible';
+  hoverdot.setAttribute('cx', x); hoverdot.setAttribute('cy', yScaleU(m.new_upper));
+  hoverdot.style.visibility = 'visible';
+  const stackH = (1+m.dissenters.length)*CELL_H + m.dissenters.length*GAP_V;
+  colring.setAttribute('x', x-COL_W/2-2);
+  colring.setAttribute('y', lowerBottom-stackH-2);
+  colring.setAttribute('width', COL_W+4);
+  colring.setAttribute('height', stackH+4);
+  colring.style.visibility = 'visible';
+
+  readout.innerHTML = '';
+  const dateEl = document.createElement('div'); dateEl.className='rd-date'; dateEl.textContent = niceDate(m.date);
+  readout.appendChild(dateEl);
+  const body = document.createElement('div'); body.className='rd-body';
+  const voteLine = document.createElement('div'); voteLine.className='rd-vote';
+  voteLine.innerHTML = `Under Chair ${m.chair} &middot; committee <b>${actionPhrase(m)}</b> &middot; vote <b>${m.votes_for}–${m.votes_against}</b> of ${m.voters}`;
+  body.appendChild(voteLine);
+  if(m.dissenters.length){
+    const ul = document.createElement('ul');
+    m.dissenters.forEach(dd=>{
+      const li = document.createElement('li');
+      const tag = document.createElement('span'); tag.className='tag'; tag.style.borderColor='var(--ink)';
+      tag.style.color = `var(--${dd.cls})`; tag.textContent = dd.cls;
+      li.appendChild(tag);
+      li.appendChild(document.createTextNode(dd.full + ' — ' + dd.quote + '.'));
+      ul.appendChild(li);
+    });
+    body.appendChild(ul);
+  } else {
+    const p = document.createElement('div'); p.style.fontStyle='italic'; p.style.color='#3a4249'; p.style.marginTop='4px';
+    p.textContent = 'Unanimous.';
+    body.appendChild(p);
+  }
+  const src = document.createElement('a'); src.className='src'; src.href = m.source; src.target='_blank'; src.rel='noopener';
+  src.textContent = 'Read the statement ↗';
+  body.appendChild(src);
+  readout.appendChild(body);
+}
+
+MEETINGS.forEach(m=>{
+  const x = xScale(m.date);
+  const hit = el('rect', {
+    x:x-hitW/2, y:MARGIN.top, width:hitW, height:lowerBottom-MARGIN.top,
+    class:'hitcol', tabindex:'0',
+    'aria-label': `${niceDate(m.date)}: ${actionPhrase(m)}, vote ${m.votes_for} to ${m.votes_against}` + (m.dissenters.length ? `, dissents: ${m.dissenters.map(d=>d.full+' ('+d.cls+')').join(', ')}` : ', unanimous')
+  });
+  hit.addEventListener('mouseenter', ()=>showMeeting(m));
+  hit.addEventListener('focus', ()=>showMeeting(m));
+  svg.appendChild(hit);
+});
+</script>
+</body>
+</html>
